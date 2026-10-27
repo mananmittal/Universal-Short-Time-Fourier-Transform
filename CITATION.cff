@@ -1,0 +1,72 @@
+cff-version: 1.2.0
+message: "If you use the U-STFT software, please cite the accompanying paper (preferred-citation below)."
+title: "Universal Short-Time Fourier Transform (U-STFT)"
+type: software
+version: 1.0.0
+date-released: 2026-10-27
+license: MIT
+repository-code: "https://github.com/mananmittal/Universal-Short-Time-Fourier-Transform"
+url: "https://mananmittal.github.io/Universal-Short-Time-Fourier-Transform/"
+abstract: >-
+  The U-STFT is a short-time Fourier transform whose window length adapts to
+  the signal over time. At every frame it scores a dyadic bank of Gaussian
+  windows by their normalized Rényi-3 time-frequency concentration, tracks a
+  posterior over window lengths with a stay/grow/reset Markov prior, and
+  outputs the posterior-weighted spectrum. A companion coefficient stream
+  reconstructs the input exactly by overlap-add, so it can be filtered and
+  resynthesized. Matching NumPy and PyTorch implementations are provided.
+keywords:
+  - short-time Fourier transform
+  - STFT
+  - spectrogram
+  - time-frequency analysis
+  - adaptive window length
+  - Rényi entropy
+  - signal processing
+  - bioacoustics
+  - PyTorch
+authors:
+  - family-names: Mittal
+    given-names: Manan
+    affiliation: Stony Brook University
+    email: manan.mittal@stonybrook.edu
+  - family-names: Sarkar
+    given-names: Kanad
+    affiliation: University of Illinois Urbana-Champaign
+  - family-names: Corey
+    given-names: Ryan M.
+    affiliation: University of Illinois Chicago
+  - family-names: Buck
+    given-names: John R.
+    affiliation: University of Massachusetts Dartmouth
+  - family-names: Singer
+    given-names: Andrew C.
+    affiliation: Stony Brook University
+preferred-citation:
+  type: article
+  title: "Universal Short-Time Fourier Transform: Data-Adaptive Window-Length Selection for Time-Frequency Analysis"
+  authors:
+    - family-names: Mittal
+      given-names: Manan
+      affiliation: Stony Brook University
+    - family-names: Sarkar
+      given-names: Kanad
+      affiliation: University of Illinois Urbana-Champaign
+    - family-names: Corey
+      given-names: Ryan M.
+      affiliation: University of Illinois Chicago
+    - family-names: Buck
+      given-names: John R.
+      affiliation: University of Massachusetts Dartmouth
+    - family-names: Singer
+      given-names: Andrew C.
+      affiliation: Stony Brook University
+  year: 2026
+  journal: "arXiv preprint arXiv:2610.37795"
+  url: "https://arxiv.org/abs/2610.37795"
+  identifiers:
+    - type: doi
+      value: 10.48550/arXiv.2610.37795
+      description: arXiv DOI
+    - type: other
+      value: "arXiv:2610.37795"

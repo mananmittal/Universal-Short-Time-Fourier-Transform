@@ -1,0 +1,79 @@
+[build-system]
+requires = ["setuptools>=77.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "universal_stft"
+version = "1.0.0"
+description = "Universal Short-Time Fourier Transform: an STFT that adapts its window length to the signal, with exact inversion (NumPy and PyTorch)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Manan Mittal", email = "manan.mittal@stonybrook.edu" },
+    { name = "Kanad Sarkar" },
+    { name = "Ryan M. Corey" },
+    { name = "John R. Buck" },
+    { name = "Andrew C. Singer" },
+]
+maintainers = [
+    { name = "Manan Mittal", email = "manan.mittal@stonybrook.edu" },
+]
+keywords = [
+    "stft", "short-time fourier transform", "spectrogram", "time-frequency",
+    "adaptive window", "window length selection", "signal processing", "dsp",
+    "renyi entropy", "audio", "bioacoustics", "underwater acoustics", "pytorch",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Multimedia :: Sound/Audio :: Analysis",
+]
+dependencies = [
+    "numpy>=1.24.0",
+    "scipy>=1.10.0",
+]
+
+[project.urls]
+Homepage = "https://mananmittal.github.io/Universal-Short-Time-Fourier-Transform/"
+Documentation = "https://github.com/mananmittal/Universal-Short-Time-Fourier-Transform#readme"
+Source = "https://github.com/mananmittal/Universal-Short-Time-Fourier-Transform"
+Issues = "https://github.com/mananmittal/Universal-Short-Time-Fourier-Transform/issues"
+Quickstart = "https://colab.research.google.com/github/mananmittal/Universal-Short-Time-Fourier-Transform/blob/main/examples/quickstart.ipynb"
+
+[project.optional-dependencies]
+torch = ["torch>=2.0.0"]
+examples = [
+    "matplotlib>=3.7.0",
+    "jupyter>=1.0.0",
+]
+benchmarks = [
+    "matplotlib>=3.7.0",
+    "soundfile>=0.12.0",
+    "librosa>=0.10.0",
+]
+# The test suite also checks the plotting helpers in benchmarks/, so it needs matplotlib.
+dev = [
+    "pytest>=7.0.0",
+    "torch>=2.0.0",
+    "matplotlib>=3.7.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["universal_stft", "universal_stft.*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

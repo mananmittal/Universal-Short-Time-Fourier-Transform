@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Universal Short-Time Fourier Transform (U-STFT)</title>
+  <meta name="description" content="U-STFT: an STFT whose window length adapts to the signal over time, with exact overlap-add reconstruction. NumPy and PyTorch implementations.">
+  <meta property="og:title" content="Universal Short-Time Fourier Transform">
+  <meta property="og:description" content="Data-adaptive window-length selection for time-frequency analysis.">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <h1>Universal Short-Time Fourier Transform</h1>
+    <p class="subtitle">Data-Adaptive Window-Length Selection for Time-Frequency Analysis</p>
+    <p class="authors">
+      <span>Manan Mittal<sup>1</sup></span>,&ensp;
+      <span>Kanad Sarkar<sup>2</sup></span>,&ensp;
+      <span>Ryan M. Corey<sup>3</sup></span>,&ensp;
+      <span>John R. Buck<sup>4</sup></span>,&ensp;
+      <span>Andrew C. Singer<sup>1</sup></span>
+    </p>
+    <p class="affils">
+      <span><sup>1</sup>Stony Brook University</span>
+      <span><sup>2</sup>University of Illinois Urbana-Champaign</span>
+      <span><sup>3</sup>University of Illinois Chicago</span>
+      <span><sup>4</sup>University of Massachusetts Dartmouth</span>
+    </p>
+    <div class="buttons">
+      <a class="btn" href="https://github.com/mananmittal/Universal-Short-Time-Fourier-Transform">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        Code on GitHub
+      </a>
+      <a class="btn" href="https://colab.research.google.com/github/mananmittal/Universal-Short-Time-Fourier-Transform/blob/main/examples/quickstart.ipynb">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zm-1.75 4.5L11.5 8l-5.25 3.5v-7z"/></svg>
+        Open in Colab
+      </a>
+      <a class="btn" href="https://arxiv.org/abs/2610.37795">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1h5l4 4v10H4V1zm5 1v4h3L9 2zM6 8h5v1H6V8zm0 2h5v1H6v-1zm0 2h3v1H6v-1z"/></svg>
+        Paper (arXiv)
+      </a>
+      <a class="btn accent" href="#citation">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3h4v4.5C7 10.5 5.5 12.5 3 13l-.5-1.2C4 11.2 4.8 10 5 9H3V3zm6 0h4v4.5c0 3-1.5 5-4 5.5l-.5-1.2c1.5-.6 2.3-1.8 2.5-2.8H9V3z"/></svg>
+        Cite
+      </a>
+      <a class="btn ghost" href="#quickstart">Get started</a>
+      <a class="btn ghost" href="#results">Results</a>
+    </div>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Sections">
+  <div class="wrap">
+    <a href="#overview">Overview</a>
+    <a href="#quickstart">Get started</a>
+    <a href="#modes">Which mode?</a>
+    <a href="#parameters">Parameters</a>
+    <a href="#method">How it works</a>
+    <a href="#results">Results</a>
+    <a href="#data-sources">Data</a>
+    <a href="#citation">Cite</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <section id="overview">
+    <h2>Overview</h2>
+    <p class="lead">
+      The short-time Fourier transform (STFT) characterizes the local frequency content of
+      time-varying signals by evaluating the discrete Fourier transform over a sliding analysis
+      window. It is governed by a fundamental resolution trade-off: a short window localizes
+      rapid transients in time at the cost of frequency resolution, whereas a long window
+      resolves closely spaced harmonics at the expense of temporal resolution.
+    </p>
+    <p>
+      The Universal Short-Time Fourier Transform (U-STFT) resolves this trade-off sequentially
+      by modeling the analysis window duration as a data-adaptive state variable. At each frame,
+      a bank of candidate window durations is scored using normalized order-three R&eacute;nyi
+      entropy to quantify joint time-frequency concentration. A window-length trellis aggregates
+      the resulting <em>O</em>(3<sup><em>M</em></sup>) candidate window schedules with linear
+      complexity per frame, with a cumulative mix-loss regret bound of
+      <em>O</em>((<em>k</em>+1)&thinsp;log&thinsp;<em>M</em>) relative to any hindsight window
+      schedule with <em>k</em> resolution changes over <em>M</em> frames. By linearity of the
+      Fourier transform, the posterior expectation across the candidate bank yields a single
+      spectrum equivalent to an STFT with a data-adaptive effective window, while an
+      envelope-normalized synthesis stream guarantees exact overlap-add reconstruction.
+      Evaluations on synthetic signals, speech, and marine bioacoustic recordings demonstrate
+      adaptive resolution tracking, enhanced spectral concentration, and exact time-domain
+      invertibility.
+    </p>
+    <p class="muted">
+      NumPy and PyTorch implementations share the same API and output names.
+    </p>
+  </section>
+
+  <section id="quickstart">
+    <h2>Get started in 5 steps</h2>
+    <p>Each step takes a minute or two. Steps 2&ndash;4 continue in the same Python session.</p>
+    <ol class="getting-started">
+      <li>
+        <h3>Install</h3>
+        <p>You need Python 3.10 or newer. One line installs the package straight from GitHub, no clone needed:</p>
+        <pre class="oneline"><code>pip install git+https://github.com/mananmittal/Universal-Short-Time-Fourier-Transform.git</code></pre>
+        <p>Or clone the repository to get the examples, tests and paper scripts too:</p>
+        <pre><code>git clone https://github.com/mananmittal/Universal-Short-Time-Fourier-Transform.git
+cd Universal-Short-Time-Fourier-Transform
+python -m pip install -e <span class="tok-s">".[examples]"</span>         <span class="tok-c"># package + matplotlib</span>
+python -m pip install -e <span class="tok-s">".[examples,torch]"</span>   <span class="tok-c"># ...or with the PyTorch backend</span></code></pre>
+        <p class="see">You will see: <code>python -c "import universal_stft"</code> runs without an error.
+          Prefer not to install anything? <a href="https://colab.research.google.com/github/mananmittal/Universal-Short-Time-Fourier-Transform/blob/main/examples/quickstart.ipynb">Run the quickstart notebook in Colab</a>.</p>
+      </li>
+      <li>
+        <h3>Your first spectrogram</h3>
+        <p>Make a test signal with a steady part and a sudden part, run the default
+          <code>mode="analysis"</code>, and plot the result in decibels.</p>
+        <pre><code><span class="tok-k">import</span> numpy <span class="tok-k">as</span> np
+<span class="tok-k">import</span> matplotlib.pyplot <span class="tok-k">as</span> plt
+<span class="tok-k">from</span> universal_stft <span class="tok-k">import</span> universal_short_time_fourier_transform
+
+<span class="tok-c"># 1 s of a steady 440 Hz tone, then 1 s of short clicks.</span>
+fs = <span class="tok-n">8000</span>                                    <span class="tok-c"># sample rate in Hz</span>
+t = np.arange(<span class="tok-n">2</span> * fs) / fs
+x = np.where(t &lt; <span class="tok-n">1.0</span>, np.sin(<span class="tok-n">2</span> * np.pi * <span class="tok-n">440</span> * t), <span class="tok-n">0.0</span>)
+x[fs::<span class="tok-n">800</span>] += <span class="tok-n">1.0</span>                            <span class="tok-c"># a click every 0.1 s</span>
+x += <span class="tok-n">1e-3</span> * np.random.default_rng(<span class="tok-n">0</span>).standard_normal(len(x))
+
+n_fft, hop_size = <span class="tok-n">512</span>, <span class="tok-n">32</span>
+result = universal_short_time_fourier_transform(x, n_fft=n_fft, hop_size=hop_size)
+S = result.analysis_spectrogram              <span class="tok-c"># complex, shape (frames, bins) = (500, 257)</span>
+
+frame_times = (np.arange(S.shape[<span class="tok-n">0</span>]) + <span class="tok-n">1</span>) * hop_size / fs   <span class="tok-c"># seconds</span>
+freqs = np.arange(S.shape[<span class="tok-n">1</span>]) * fs / n_fft                    <span class="tok-c"># Hz</span>
+S_db = <span class="tok-n">20</span> * np.log10(np.abs(S.T) + <span class="tok-n">1e-12</span>)
+plt.imshow(S_db, origin=<span class="tok-s">"lower"</span>, aspect=<span class="tok-s">"auto"</span>, cmap=<span class="tok-s">"magma"</span>,
+           extent=[frame_times[<span class="tok-n">0</span>], frame_times[-<span class="tok-n">1</span>], freqs[<span class="tok-n">0</span>], freqs[-<span class="tok-n">1</span>]],
+           vmin=S_db.max() - <span class="tok-n">80</span>, vmax=S_db.max())
+plt.xlabel(<span class="tok-s">"Time (s)"</span>)
+plt.ylabel(<span class="tok-s">"Frequency (Hz)"</span>)
+plt.show()</code></pre>
+        <p class="see">You will see: a thin horizontal line at 440&nbsp;Hz for the first second, then thin vertical lines for the clicks.</p>
+      </li>
+      <li>
+        <h3>Look at what it chose</h3>
+        <p><code>dominant_lengths</code> is the most likely window length (in samples) at each frame.</p>
+        <pre><code><span class="tok-k">print</span>(result.blend_info[<span class="tok-n">0</span>][<span class="tok-n">0</span>])               <span class="tok-c"># the window bank: [ 32  64 128 256]</span>
+
+plt.figure()
+plt.step(frame_times, result.dominant_lengths, where=<span class="tok-s">"post"</span>)
+plt.yscale(<span class="tok-s">"log"</span>, base=<span class="tok-n">2</span>)
+plt.xlabel(<span class="tok-s">"Time (s)"</span>)
+plt.ylabel(<span class="tok-s">"Most likely window (samples)"</span>)
+plt.show()
+<span class="tok-c"># result.pmf_history has the full probability per window, shape (frames, windows)</span></code></pre>
+        <p class="see">You will see: the window climbs to 256 samples during the tone and drops back to 32&ndash;64 at the clicks.</p>
+      </li>
+      <li>
+        <h3>Filter and resynthesize</h3>
+        <p>Run with <code>mode="filtering"</code> to also get the invertible companion stream.
+          Multiply every frame by the same gain, then invert.</p>
+        <pre><code><span class="tok-k">from</span> universal_stft <span class="tok-k">import</span> inverse_universal_spectrogram
+
+result = universal_short_time_fourier_transform(x, n_fft=n_fft, hop_size=hop_size,
+                                                mode=<span class="tok-s">"filtering"</span>)
+F = result.filtering_spectrogram
+
+x_hat = inverse_universal_spectrogram(F, len(x), n_fft=n_fft, hop_size=hop_size)
+<span class="tok-k">print</span>(np.max(np.abs(x - x_hat)))             <span class="tok-c"># below 1e-15</span>
+
+gain = (np.arange(F.shape[<span class="tok-n">1</span>]) * fs / n_fft &lt; <span class="tok-n">1000</span>).astype(float)   <span class="tok-c"># low-pass at 1 kHz</span>
+x_low = inverse_universal_spectrogram(F * gain, len(x), n_fft=n_fft, hop_size=hop_size)</code></pre>
+        <p class="see">You will see: a reconstruction error near machine precision, and <code>x_low</code> keeps the tone but loses the clicks above 1&nbsp;kHz.</p>
+      </li>
+      <li>
+        <h3>PyTorch: batches, GPU, gradients</h3>
+        <p>Same names and outputs. Input is <code>(samples,)</code> or <code>(batch, samples)</code>;
+          device and precision are kept (<code>float32</code> &rarr; <code>complex64</code>,
+          <code>float64</code> &rarr; <code>complex128</code>).</p>
+        <pre><code><span class="tok-k">import</span> torch
+<span class="tok-k">from</span> universal_stft.torch <span class="tok-k">import</span> universal_short_time_fourier_transform
+
+device = <span class="tok-s">"cuda"</span> if torch.cuda.is_available() else <span class="tok-s">"cpu"</span>
+x = torch.randn(<span class="tok-n">8</span>, <span class="tok-n">16_000</span>, device=device, requires_grad=<span class="tok-k">True</span>)   <span class="tok-c"># (batch, samples)</span>
+
+result = universal_short_time_fourier_transform(x, n_fft=<span class="tok-n">512</span>, hop_size=<span class="tok-n">32</span>)
+<span class="tok-k">print</span>(result.analysis_spectrogram.shape)     <span class="tok-c"># torch.Size([8, 500, 257]), complex64</span>
+
+loss = result.analysis_spectrogram.abs().pow(<span class="tok-n">2</span>).mean()
+loss.backward()                              <span class="tok-c"># gradients flow back to x</span></code></pre>
+        <p class="see">You will see: one spectrogram per batch row, and <code>x.grad</code> filled in after <code>backward()</code>.</p>
+      </li>
+    </ol>
+    <h3>Several channels?</h3>
+    <p><code>multichannel_stft</code> chooses the windows on one reference channel and uses them
+      for every channel, so phase differences between channels stay meaningful. This runs in the NumPy session from steps 2&ndash;4.</p>
+    <pre><code><span class="tok-k">from</span> universal_stft <span class="tok-k">import</span> multichannel_stft
+
+x_multi = np.stack([x, <span class="tok-n">0.5</span> * np.roll(x, <span class="tok-n">3</span>)])            <span class="tok-c"># (channels, samples)</span>
+result = multichannel_stft(x_multi, reference_sensor_id=<span class="tok-n">0</span>, n_fft=n_fft, hop_size=hop_size)
+<span class="tok-k">print</span>(result.analysis_spectrogram.shape)                <span class="tok-c"># (2, 500, 257)</span></code></pre>
+    <p class="muted">The README has the longer version of each step, an API table and a troubleshooting FAQ.</p>
+  </section>
+
+  <section id="modes">
+    <h2>Which mode do I need?</h2>
+    <div class="decide">
+      <div class="q">Do you need to turn the result back into a signal (filter, denoise, resynthesize)?</div>
+      <div class="cards">
+        <div class="card">
+          <div class="tag">No &middot; plots, features, neural networks</div>
+          <h3>mode="analysis"</h3>
+          <p>The default. One causal pass, no delay. Use <code>analysis_spectrogram</code>.
+            Do not invert it: its window changes from frame to frame.</p>
+        </div>
+        <div class="card">
+          <div class="tag">Yes &middot; filtering and resynthesis</div>
+          <h3>mode="filtering"</h3>
+          <p>Same pass, plus <code>filtering_spectrogram</code>. Multiply every frame by one
+            frequency response, then call <code>inverse_universal_spectrogram</code> with the same
+            <code>n_fft</code> and <code>hop_size</code>. Each companion frame is ready
+            <code>max_L/H &minus; 1</code> frames after its analysis frame.</p>
+        </div>
+      </div>
+      <ul class="also">
+        <li>Several sensors that must share windows? Use <code>multichannel_stft</code>.</li>
+        <li>Apply windows chosen on one signal to another? Pass <code>result.blend_info</code> to
+          <code>generate_analysis_spectrogram</code>, <code>generate_filtering_spectrogram</code>
+          or <code>blend_guided_stft</code>.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="parameters">
+    <h2>Choosing parameters</h2>
+    <div class="card params">
+      <dl>
+        <dt><code>hop_size</code> <span>default 32</span></dt>
+        <dd>The step between frames <em>and</em> the shortest window, in samples. Start near 4&nbsp;ms:
+          32 at 8&nbsp;kHz, 64 at 16&nbsp;kHz.</dd>
+        <dt><code>n_fft</code> <span>default 256</span></dt>
+        <dd>The FFT size. It sets the longest window: the bank is <em>H</em>, 2<em>H</em>,
+          4<em>H</em>, &hellip; up to <code>max(n_fft // 2, hop_size)</code>. Use at least
+          <code>4 * hop_size</code>, or there is only one window to choose from.</dd>
+        <dt><code>beta</code> <span>default 1.5</span></dt>
+        <dd>How strongly the choice follows the per-frame scores. Start between 1 and 2; lower it if
+          the window flickers, raise it if it reacts too slowly. <code>0</code> ignores the scores.</dd>
+      </dl>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th><code>n_fft</code></th><th><code>hop_size</code></th><th>Windows (samples)</th></tr></thead>
+          <tbody>
+            <tr><td>256</td><td>32</td><td>32, 64, 128</td></tr>
+            <tr><td>512</td><td>32</td><td>32, 64, 128, 256</td></tr>
+            <tr><td>1024</td><td>64</td><td>64, 128, 256, 512</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="muted">Print the bank for any setting with <code>result.blend_info[0][0]</code>.
+        Memory grows with windows &times; frames &times; bins, because
+        <code>all_candidate_spectrograms</code> keeps every candidate spectrum.</p>
+    </div>
+  </section>
+
+  <section id="method">
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li><strong>A dyadic window bank.</strong> Candidate windows have lengths
+        <em>H</em>, 2<em>H</em>, 4<em>H</em>, &hellip;, each analysed at every frame.</li>
+      <li><strong>An entropy score.</strong> Each candidate spectrum is scored by its
+        normalized order-3 R&eacute;nyi entropy, which rewards energy that is concentrated
+        in both time and frequency.</li>
+      <li><strong>A posterior over window lengths.</strong> The window length is treated as a
+        hidden state on a Markov trellis. Between frames it can <em>stay</em>, <em>grow</em>
+        to the next longer window, or <em>reset</em> to the shortest one. The scores update
+        a posterior over these states one frame at a time.</li>
+      <li><strong>A blended spectrum.</strong> The output is the posterior-weighted mixture of
+        candidate spectra. Because the mixing is linear, this equals an STFT with one
+        data-adaptive effective window per frame.</li>
+      <li><strong>Exact inversion.</strong> Dividing the input by the overlap envelope of the
+        effective windows gives a companion stream that reconstructs perfectly by
+        overlap-add, so it can be filtered and resynthesized.</li>
+    </ol>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 640 250" role="img" aria-labelledby="trellis-title trellis-desc">
+        <title id="trellis-title">Stay, grow and reset transitions between window lengths</title>
+        <desc id="trellis-desc">Four states H, 2H, 4H and 8H in a row. Each has a self-loop for stay, an arrow to the next longer window for grow, and every state except H has a dashed arrow back to H for reset.</desc>
+        <defs>
+          <marker id="ah-grow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker>
+          <marker id="ah-stay" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker>
+          <marker id="ah-reset" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c0533a"/></marker>
+        </defs>
+
+        <!-- stay loops -->
+        <path class="stay" marker-end="url(#ah-stay)" d="M78,82 C60,30 120,30 102,82"/>
+        <path class="stay" marker-end="url(#ah-stay)" d="M228,82 C210,30 270,30 252,82"/>
+        <path class="stay" marker-end="url(#ah-stay)" d="M378,82 C360,30 420,30 402,82"/>
+        <path class="stay" marker-end="url(#ah-stay)" d="M528,82 C510,30 570,30 552,82"/>
+
+        <!-- grow arrows -->
+        <path class="grow" marker-end="url(#ah-grow)" d="M126,112 L204,112"/>
+        <path class="grow" marker-end="url(#ah-grow)" d="M276,112 L354,112"/>
+        <path class="grow" marker-end="url(#ah-grow)" d="M426,112 L504,112"/>
+        <path class="grow" d="M576,112 L600,112" stroke-dasharray="2 4"/>
+
+        <!-- reset arcs -->
+        <path class="reset" marker-end="url(#ah-reset)" d="M226,143 C205,175 140,178 116,146"/>
+        <path class="reset" marker-end="url(#ah-reset)" d="M378,144 C340,205 120,205 98,152"/>
+        <path class="reset" marker-end="url(#ah-reset)" d="M530,145 C480,240 90,240 80,152"/>
+
+        <!-- nodes -->
+        <circle class="node" cx="90" cy="112" r="34"/>
+        <circle class="node" cx="240" cy="112" r="34"/>
+        <circle class="node" cx="390" cy="112" r="34"/>
+        <circle class="node" cx="540" cy="112" r="34"/>
+        <text class="label" x="90" y="113">H</text>
+        <text class="label" x="240" y="113">2H</text>
+        <text class="label" x="390" y="113">4H</text>
+        <text class="label" x="540" y="113">8H</text>
+        <text class="small" x="618" y="116">&hellip;</text>
+
+        <!-- legend -->
+        <g transform="translate(150,14)">
+          <line x1="0" y1="0" x2="22" y2="0" class="stay"/><text class="legend" x="28" y="4">stay</text>
+          <line x1="90" y1="0" x2="112" y2="0" class="grow"/><text class="legend" x="118" y="4">grow</text>
+          <line x1="182" y1="0" x2="204" y2="0" class="reset"/><text class="legend" x="210" y="4">reset</text>
+        </g>
+      </svg>
+      <figcaption>Each frame, the window length either stays, grows by one dyadic step, or resets to the shortest window.</figcaption>
+    </figure>
+  </section>
+
+  <section id="results">
+    <h2>Results</h2>
+    <p>Four figures for each of seven recordings: marine bioacoustics, English speech and a
+      synthetic chirp. Pick a recording, then click any figure to enlarge it.
+      Window labels <em>H</em>, 2<em>H</em>, &hellip; are positions in the dyadic bank.</p>
+    <div class="picker" id="picker" role="tablist" aria-label="Recording">
+      <select id="picker-select" aria-label="Recording"></select>
+    </div>
+    <div class="rec-meta" id="rec-meta"></div>
+    <div class="plots" id="plots"></div>
+    <noscript><p class="muted">The gallery needs JavaScript. Please enable it to browse the figures.</p></noscript>
+  </section>
+
+  <section id="data-sources">
+    <h2>Data sources</h2>
+    <p>The field recordings are short excerpts. Please cite the original collection when you
+      reuse them; NOAA's disclaimer and use constraints apply to those excerpts independently of
+      this repository's license.</p>
+    <ol class="refs">
+      <li>NOAA Office of National Marine Sanctuaries and U.S. Navy, <em>SanctSound Raw Passive
+        Acoustic Data</em>. NOAA National Centers for Environmental Information, 2020.
+        doi:<a href="https://doi.org/10.25921/saca-sp25">10.25921/saca-sp25</a>.
+        Used for the humpback whale (CI04), humpback and dolphin (HI04), snapping shrimp (FK02)
+        and fish chorus (GR01) recordings.</li>
+      <li>J. Yamagishi, C. Veaux and K. MacDonald, <em>CSTR VCTK Corpus: English Multi-speaker
+        Corpus for CSTR Voice Cloning Toolkit</em> (version 0.92). University of Edinburgh, Centre
+        for Speech Technology Research, 2019.
+        doi:<a href="https://doi.org/10.7488/ds/2645">10.7488/ds/2645</a>.
+        Used for the speech recordings of speakers p227 and p228.</li>
+    </ol>
+    <p>The hyperbolic chirp is synthetic and was generated for this work.</p>
+  </section>
+
+  <section id="citation">
+    <h2>Cite this work</h2>
+    <div class="cite-card">
+      <p>If the U-STFT or this code helps your research, please cite the paper.
+        Use <strong>Copy BibTeX</strong> to grab the entry.</p>
+      <p>Paper: <a href="https://arxiv.org/abs/2610.37795">arXiv:2610.37795</a></p>
+      <pre class="bibtex"><code>@misc{mittal2026ustft,
+  title={Universal Short-Time Fourier Transform: Data-Adaptive Window-Length Selection for Time-Frequency Analysis},
+  author={Mittal, Manan and Sarkar, Kanad and Corey, Ryan M. and Buck, John R. and Singer, Andrew C.},
+  year={2026},
+  eprint={2610.37795},
+  archivePrefix={arXiv},
+  primaryClass={eess.SP},
+  url={https://arxiv.org/abs/2610.37795}
+}</code></pre>
+      <p class="muted">GitHub's <em>Cite this repository</em> button, generated from
+        <a href="https://github.com/mananmittal/Universal-Short-Time-Fourier-Transform/blob/main/CITATION.cff"><code>CITATION.cff</code></a>,
+        gives the same reference in APA and BibTeX.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>This work was supported in part by the Office of Naval Research under Award N00014-23-1-2133.</p>
+    <p>Code released under the <a href="https://github.com/mananmittal/Universal-Short-Time-Fourier-Transform/blob/main/LICENSE">MIT License</a>.
+      &copy; 2026 Manan Mittal, Kanad Sarkar, Ryan M. Corey, John R. Buck, Andrew C. Singer.</p>
+  </div>
+</footer>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Enlarged figure">
+  <button type="button" class="lb-close" id="lb-close" aria-label="Close">&times;</button>
+  <button type="button" class="lb-prev" id="lb-prev" aria-label="Previous figure">&#8249;</button>
+  <img id="lb-img" alt="">
+  <div class="lb-cap" id="lb-cap"></div>
+  <button type="button" class="lb-next" id="lb-next" aria-label="Next figure">&#8250;</button>
+</div>
+
+<script src="assets/gallery.js"></script>
+</body>
+</html>

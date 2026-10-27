@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ipynb_checkpoints/
+build/
+dist/
+
+# OS / editor cruft
+.DS_Store
+
+# LaTeX scratch
+example.tex
+paper.tex
+*.pdf
+
+# Generated benchmark outputs (regenerate with `python -m benchmarks.run_*`)
+results/*
+!results/.gitkeep
+
+# Audio data: keep only the smoke-test sample and checksum-locked paper inputs.
+benchmarks/wav/*.wav
+!benchmarks/wav/hyperbolic_chirp.wav
+!benchmarks/wav/humpback_whale_song.wav
+!benchmarks/wav/snapping_shrimp.wav
+
+# Local tool settings
+.claude/
+
+# Manuscript sources (kept out of the code release)
+Manan_Mittal___Universal_Short_Time_Fourier_Transform/
